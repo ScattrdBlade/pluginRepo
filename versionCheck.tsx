@@ -6,8 +6,8 @@
 
 import { showNotification } from "@api/Notifications";
 import { PluginNative } from "@utils/types";
-import { Button } from "@webpack/common";
 const Native = VencordNative.pluginHelpers.PluginsRepo as PluginNative<typeof import("./native")>;
+import { relaunch } from "@utils/native";
 
 export const VERSION = "1.0.0";
 
@@ -32,10 +32,9 @@ export async function checkUpdate() {
         body: "Click here to update to the latest version.",
         permanent: true,
         noPersist: false,
-        onClick: Native.updatePluginRepo
+        onClick: () => {
+            Native.updatePluginRepo();
+            relaunch();
+        }
     });
-}
-
-export function updateButton() {
-    return (<Button onClick={() => checkUpdate()}>Check for update!</Button>);
 }
