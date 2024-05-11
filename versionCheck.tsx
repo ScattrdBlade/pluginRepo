@@ -9,7 +9,7 @@ import { Button } from "@webpack/common";
 
 const Native = VencordNative.pluginHelpers.PluginsRepo as PluginNative<typeof import("../native")>;
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.0.1";
 
 async function getVersion() {
     const repoVersion = await (await fetch("https://raw.githubusercontent.com/ScattrdBlade/plugin-repo-vencord/main/utils/versionCheck.tsx", { cache: "no-cache" })).text();
