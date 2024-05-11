@@ -37,7 +37,7 @@ export default definePlugin({
 
         customSettingsSections.push(() => ({
             section: "PluginRepo",
-            label: "Plugins Repo",
+            label: "Plugin Repo",
             element: require("./Components/PluginsRepoTab").default,
             className: "vc-plugin0-repo",
         }));
