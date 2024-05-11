@@ -79,7 +79,7 @@ function ExtraPluginsTab() {
     const filteredPlugins = sortedPlugins.filter(pluginFilter);
 
     return (
-        <SettingsTab title="Plugin Repo">
+        <SettingsTab title="Plugins Repo">
             <Card className={classes("vc-settings-card", "vc-backup-restore-card")}>
                 <Flex flexDirection="column">
                     <strong>Warning</strong>
