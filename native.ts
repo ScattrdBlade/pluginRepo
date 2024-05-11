@@ -6,7 +6,8 @@
 
 import { exec } from "child_process";
 import { unzip } from "fflate";
-import { mkdir, readdir, readFile, rm, unlink, writeFile } from "fs/promises";
+import { constants } from "fs";
+import { access, mkdir, readdir, readFile, rm, unlink, writeFile } from "fs/promises";
 import os from "os";
 import { dirname, join } from "path";
 
@@ -190,4 +191,58 @@ async function uninstallPlugin(_: any, filename: string): Promise<void> {
     }
 }
 
-export { getInstalledPlugins, installPlugin, uninstallPlugin };
+async function updatePluginRepo() {
+    const pluginInfo: PluginInfo = {
+        name: "Plugins Repo",
+        filename: "PluginsRepo",
+        filesearch: "PluginsRepo",
+        downloadUrl: "https://github.com/ScattrdBlade/PluginsRepo/archive/refs/heads/main.zip",
+        description: "Updates the Plugin Repo with the latest files.",
+        tags: ["management"],
+        dateAdded: new Date().toISOString(),
+        options: {},
+    };
+
+    const pluginDir = join(pluginsDir, pluginInfo.filename);
+
+    // Remove existing plugin directory if it exists
+    if (await checkExists(pluginDir)) {
+        await rm(pluginDir, { recursive: true });
+        console.log("Existing Plugin Repo removed.");
+    }
+
+    // Download and extract new plugin version
+    try {
+        const response = await fetch(pluginInfo.downloadUrl);
+        if (!response.ok) throw new Error(`Failed to fetch ${pluginInfo.downloadUrl}: ${response.statusText}`);
+
+        const zipDataArray = new Uint8Array(await response.arrayBuffer()); // Retrieve the data as a Uint8Array
+        const zipData = Buffer.from(zipDataArray); // Convert to Buffer
+        const zipFilePath = join(pluginsDir, pluginInfo.filename + ".zip");
+        await writeFile(zipFilePath, zipData);
+        console.log("Plugin zip file downloaded.");
+
+        await extract(zipData, pluginsDir, pluginInfo);
+        console.log("Plugin extracted successfully.");
+
+        // Optionally run additional setup commands here
+        await runShellCommand("pnpm build", pluginDir);
+        console.log("Plugin build completed.");
+
+        await runShellCommand("pnpm inject", pluginDir);
+        console.log("Plugin injection completed.");
+    } catch (error) {
+        console.error("Error updating Plugin Repo:", error);
+    }
+}
+
+async function checkExists(path: string): Promise<boolean> {
+    try {
+        await access(path, constants.F_OK);
+        return true; // The file or directory exists
+    } catch {
+        return false; // The file or directory does not exist
+    }
+}
+
+export { getInstalledPlugins, installPlugin, uninstallPlugin, updatePluginRepo };
