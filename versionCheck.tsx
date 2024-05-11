@@ -6,6 +6,7 @@
 
 import { showNotification } from "@api/Notifications";
 import { Button } from "@webpack/common";
+import { PluginNative } from "@utils/types";
 
 const Native = VencordNative.pluginHelpers.PluginsRepo as PluginNative<typeof import("../native")>;
 
