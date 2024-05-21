@@ -4,17 +4,15 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
 
 import { checkUpdate } from "./versionCheck";
 
 export default definePlugin({
-    name: "Plugin Repo",
+    name: "PluginRepo",
     description: "Adds a repo containing Third-Party Plugins to download.",
-    authors: [{
-        name: "ScattrdBlade",
-        id: 678007540608532491n,
-    }],
+    authors: [Devs.ScattrdBlade],
     required: false,
     patches: [
         {

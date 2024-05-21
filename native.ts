@@ -7,9 +7,9 @@
 import { exec } from "child_process";
 import { unzip } from "fflate";
 import { constants } from "fs";
-import { access, mkdir, readdir, readFile, rm, unlink, writeFile } from "fs/promises";
+import { access, mkdir, readdir, readFile, rename, rm, unlink, writeFile } from "fs/promises";
 import os from "os";
-import { dirname, join } from "path";
+import { dirname, extname, join } from "path";
 
 import { PluginInfo } from "./types";
 
@@ -96,10 +96,11 @@ async function extract(data: Buffer, pluginsDir: string, plugin: PluginInfo): Pr
                 }
             });
 
-            if (firstLevelDirs.size === 1) {
-                const rootDirName = Array.from(firstLevelDirs)[0];
-                const rootDirPath = join(pluginsDir, rootDirName);
-                try {
+            try {
+                if (firstLevelDirs.size === 1) {
+                    const rootDirName = Array.from(firstLevelDirs)[0];
+                    const rootDirPath = join(pluginsDir, rootDirName);
+
                     const filesToMove = plugin.downloadFiles
                         ? Object.keys(files).filter(filePath =>
                             plugin.downloadFiles!.some(
@@ -112,12 +113,10 @@ async function extract(data: Buffer, pluginsDir: string, plugin: PluginInfo): Pr
                     await Promise.all(
                         filesToMove.map(async filePath => {
                             const srcPath = join(rootDirPath, filePath.replace(`${rootDirName}/`, ""));
-                            // Maintain the directory structure as specified, but adjust to remove the rootDirName prefix
                             const relativePath = filePath.replace(`${rootDirName}/`, "");
                             const destPathComponents = relativePath.split("/");
-                            // Check if the path refers to a directory or a file
                             const isDirectory = destPathComponents.slice(-1)[0].indexOf(".") === -1;
-                            const destPath = isDirectory ? join(baseDir, relativePath) : join(baseDir, destPathComponents.slice(0, -1).join("/"), destPathComponents.slice(-1)[0]);
+                            const destPath = isDirectory ? join(baseDir, relativePath) : join(baseDir, relativePath);
 
                             await mkdir(dirname(destPath), { recursive: true });
 
@@ -133,15 +132,8 @@ async function extract(data: Buffer, pluginsDir: string, plugin: PluginInfo): Pr
                     if (plugin.downloadFiles) {
                         await rm(rootDirPath, { recursive: true, force: true });
                     }
-
-                    resolve();
-                } catch (moveErr) {
-                    console.error(`Error moving files: ${moveErr}`);
-                    reject(moveErr);
-                }
-            } else {
-                // If there's no single root folder or specific files to move, just extract normally
-                try {
+                } else {
+                    // If there's no single root folder or specific files to move, just extract normally
                     await Promise.all(
                         Object.keys(files).map(async filePath => {
                             const fullPath = join(baseDir, filePath);
@@ -149,16 +141,27 @@ async function extract(data: Buffer, pluginsDir: string, plugin: PluginInfo): Pr
                             await writeFile(fullPath, files[filePath]);
                         })
                     );
-
-                    resolve();
-                } catch (writeErr) {
-                    console.error(`Error writing files: ${writeErr}`);
-                    reject(writeErr);
                 }
-            }
 
-            // Delete the original ZIP file
-            await rm(zipFilePath, { force: true });
+                // Delete the original ZIP file
+                await rm(zipFilePath, { force: true });
+
+                // Rename the file if downloadFiles contains a single file with an extension
+                if (plugin.downloadFiles && plugin.downloadFiles.length === 1) {
+                    const downloadedFile = plugin.downloadFiles[0];
+                    const fileExtension = extname(downloadedFile);
+                    if (fileExtension) {
+                        const oldFilePath = join(baseDir, downloadedFile);
+                        const newFilePath = join(pluginsDir, `${plugin.filesearch}`);
+                        await rename(oldFilePath, newFilePath);
+                    }
+                }
+
+                resolve();
+            } catch (err) {
+                console.error(`Error moving or renaming files: ${err}`);
+                reject(err);
+            }
         });
     });
 }
@@ -179,15 +182,36 @@ async function moveFilesToRoot(srcDir: string, destDir: string) {
         }
     }
 }
-
-async function uninstallPlugin(_: any, filename: string): Promise<void> {
+async function uninstallPlugin(_, plugin: PluginInfo): Promise<void> {
     try {
-        const filePath = join(pluginsDir, filename);
-        await unlink(filePath);
-        console.log(`Plugin ${filename} has been successfully uninstalled.`);
+        if (plugin.downloadFiles && plugin.downloadFiles.length > 0) {
+            const parentDirs = new Set<string>();
+
+            for (const originalFileName of plugin.downloadFiles) {
+                // Assuming files may be renamed to `plugin.filename` during installation if specified
+                const renamedFileName = plugin.filename || originalFileName;
+                const fullPath = join(pluginsDir, renamedFileName);
+                await rm(fullPath, { recursive: true, force: true });
+                // Collect parent directories to potentially remove later
+                parentDirs.add(dirname(fullPath));
+            }
+
+            // Additional cleanup to remove any empty parent directories
+            for (const dir of parentDirs) {
+                if ((await readdir(dir)).length === 0) { // Check if the directory is empty
+                    await rm(dir, { recursive: true, force: true });
+                }
+            }
+        } else if (plugin.filename) {
+            // If no specific files are listed, remove the entire plugin directory/file
+            const fullPath = join(pluginsDir, plugin.filename);
+            await rm(fullPath, { recursive: true, force: true });
+        }
+
+        console.log(`Plugin ${plugin.name} has been successfully uninstalled.`);
     } catch (error) {
-        console.error(`Error uninstalling plugin ${filename}:`, error);
-        throw new Error(`Uninstallation failed for ${filename}: ${error}`);
+        console.error(`Error uninstalling plugin ${plugin.name}:`, error);
+        throw new Error(`Uninstallation failed for ${plugin.name}: ${error}`);
     }
 }
 

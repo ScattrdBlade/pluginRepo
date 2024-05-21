@@ -9,7 +9,6 @@ import { React, useEffect, useState } from "@webpack/common";
 
 import { PluginInfo } from "../types";
 
-
 const Native = VencordNative.pluginHelpers.PluginsRepo as PluginNative<typeof import("../native")>;
 
 const InstallButton: React.FC<{ plugin: PluginInfo; }> = ({ plugin }) => {
@@ -40,7 +39,7 @@ const InstallButton: React.FC<{ plugin: PluginInfo; }> = ({ plugin }) => {
             console.log("Uninstalling...");
             setInstalling(true);
             try {
-                await Native.uninstallPlugin(plugin.filename);
+                await Native.uninstallPlugin(plugin); // Pass the entire plugin object
                 setIsInstalled(false);
                 console.log("Uninstallation successful.");
             } catch (error) {
