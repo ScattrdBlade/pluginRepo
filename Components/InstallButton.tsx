@@ -9,7 +9,7 @@ import { React, useEffect, useState } from "@webpack/common";
 
 import { PluginInfo } from "../types";
 
-const Native = VencordNative.pluginHelpers.PluginsRepo as PluginNative<typeof import("../native")>;
+const Native = VencordNative.pluginHelpers.PluginRepo as PluginNative<typeof import("../native")>;
 
 const InstallButton: React.FC<{ plugin: PluginInfo; }> = ({ plugin }) => {
     const [installing, setInstalling] = useState(false);

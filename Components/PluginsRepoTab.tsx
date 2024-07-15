@@ -19,7 +19,7 @@ import { AddonCard } from "./AddonCard";
 import InstallButton from "./InstallButton";
 import { openPluginModal } from "./PluginModal";
 
-const Native = VencordNative.pluginHelpers.PluginsRepo as PluginNative<typeof import("../native")>;
+const Native = VencordNative.pluginHelpers.PluginRepo as PluginNative<typeof import("../native")>;
 
 const cl = classNameFactory("vc-plugins-");
 
