@@ -1,3 +1,6 @@
+- **Recent Changes:** Fixed plugin repo's updater for when a new version is released.
+- **ToDo:** Re-check all plugins and fix the plugins that have been moved to different repos, got deleted, or no longer work.
+
 > [!TIP]
 > **If you run into any issues, please feel free to message me on Discord: [scattrdblade](https://discord.com/users/678007540608532491)**
 # Plugin Repo (Vencord)
