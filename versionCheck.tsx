@@ -7,9 +7,9 @@
 import { showNotification } from "@api/Notifications";
 import { relaunch } from "@utils/native";
 import { PluginNative } from "@utils/types";
-const Native = VencordNative.pluginHelpers.PluginsRepo as PluginNative<typeof import("./native")>;
+const Native = VencordNative.pluginHelpers.PluginRepo as PluginNative<typeof import("./native")>;
 
-export const VERSION = "1.0.4";
+export const VERSION = "1.0.5";
 
 async function getVersion() {
     const repoVersion = await (await fetch("https://raw.githubusercontent.com/ScattrdBlade/PluginsRepo/main/versionCheck.tsx", { cache: "no-cache" })).text();
@@ -33,9 +33,21 @@ export async function checkUpdate() {
         permanent: true,
         noPersist: false,
         onClick: async () => {
-            await Native.updatePluginRepo();
-            relaunch();
+            try {
+                await Native.updatePluginRepo();
+                relaunch();
+            } catch (error) {
+                console.error("Failed to update Plugin Repo:", error);
+                showNotification({
+                    title: "Update Failed",
+                    body: "Click here to download the update manually.",
+                    permanent: true,
+                    noPersist: false,
+                    onClick: () => {
+                        window.open("https://github.com/ScattrdBlade/PluginsRepo", "_blank");
+                    }
+                });
+            }
         }
     });
-
 }
