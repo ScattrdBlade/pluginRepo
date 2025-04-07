@@ -1,5 +1,8 @@
 **UPDATE: Added all plugins from [#unofficial-plugins](https://discordapp.com/channels/1015060230222131221/1256395889354997771) (except nin0's because his repos are down) and fixed all previously broken plugins**
 
+> [!TIP]
+> **If you run into any issues, please let me know on [Discord](https://discord.gg/jHDJaW9Gyz)**
+
 # Plugin Repo (Vencord)
 This is a Vencord plugin that adds a Plugin Repo to settings so you can search for and download third-party Vencord plugins directly within Discord, just like BetterDiscord's plugin repo. This eliminates the need to manually search for and download third-party plugins from external sources, making the process a lot more user-friendly and convenient.
 > [!NOTE]
@@ -26,6 +29,3 @@ The full cloning installation guide can be found [here](https://discord.com/chan
 2. Unzip the downloaded ZIP file into the `userplugins` folder.
 3. Ensure it's structured as `src/userplugins/pluginRepo` or `src/userplugins/pluginRepo-main`
 5. Run `pnpm build` in the terminal (command prompt/CMD) and the plugin should be added.
-
-> [!TIP]
-> If you run into any issues, please feel free to message me on Discord: [scattrdblade](https://discord.com/users/678007540608532491)
