@@ -1,4 +1,4 @@
-**UPDATE: Added all plugins from [#unofficial-plugins](https://discordapp.com/channels/1015060230222131221/1256395889354997771) (except nin0's because his repos are down) and fixed all previously broken plugins**
+**UPDATE: Fixed all included plugins (nin0's pplugins not included because his repos are custom)**
 
 > [!TIP]
 > **If you run into any issues, please let me know on [Discord](https://discord.gg/jHDJaW9Gyz)**
