@@ -1,4 +1,4 @@
-**UPDATE: Fixed all included plugins (nin0's plugins not included because his repos are custom)**
+**UPDATE: Fixed all included plugins and added more plugins! (nin0's plugins not included because his repos are custom)**
 
 > [!TIP]
 > **If you run into any issues, please let me know on [Discord](https://discord.gg/jHDJaW9Gyz)**
