@@ -14,7 +14,7 @@ import { dirname, join } from "path";
 import { PluginInfo } from "./types";
 
 const pluginsDir = join(__dirname, "../src/userplugins");
-const userDirectory = join(os.homedir(), "Vencord"); // Adjust the path as needed
+const userDirectory = join(os.homedir(), "Vencord");
 
 async function ensureDirectoryExists(dir: string) {
     try {
@@ -67,7 +67,6 @@ async function installPlugin(_: any, plugin: PluginInfo): Promise<void> {
         await extract(zipBuffer, pluginsDir, plugin);
         console.log(`Plugin ${plugin.name} extracted successfully.`);
 
-        // Run pnpm build and inject commands
         await runShellCommand("pnpm build", userDirectory);
         console.log(`Build completed successfully in ${userDirectory}.`);
 
@@ -175,10 +174,15 @@ async function extract(data: Buffer, pluginsDir: string, plugin: PluginInfo): Pr
                             const destPath = join(baseDir, relativePath);
                             await mkdir(dirname(destPath), { recursive: true });
 
-                            const isDirectory = !relativePath.includes(".");
-                            if (isDirectory) {
+                            // Proper directory detection
+                            // A directory in ZIP files typically ends with "/" and has no content
+                            const isDirectory = filePath.endsWith("/") || files[filePath].length === 0;
+
+                            if (isDirectory && !destPath.endsWith("/")) {
+                                // This is a directory entry, ensure it exists
                                 await mkdir(destPath, { recursive: true });
-                            } else {
+                            } else if (!isDirectory) {
+                                // This is a file, write its content
                                 await writeFile(destPath, files[filePath]);
                             }
                         })
@@ -191,11 +195,24 @@ async function extract(data: Buffer, pluginsDir: string, plugin: PluginInfo): Pr
                     }
                 } else {
                     // Default behavior for when no specific files are requested
+                    // Sort files so directories come before their contents
+                    const sortedFiles = Object.keys(files).sort();
+
                     await Promise.all(
-                        Object.keys(files).map(async filePath => {
+                        sortedFiles.map(async filePath => {
                             const fullPath = join(baseDir, filePath);
                             await mkdir(dirname(fullPath), { recursive: true });
-                            await writeFile(fullPath, files[filePath]);
+
+                            // Proper directory detection
+                            const isDirectory = filePath.endsWith("/") || files[filePath].length === 0;
+
+                            if (isDirectory && !fullPath.endsWith("/")) {
+                                // This is a directory entry, ensure it exists
+                                await mkdir(fullPath, { recursive: true });
+                            } else if (!isDirectory) {
+                                // This is a file, write its content
+                                await writeFile(fullPath, files[filePath]);
+                            }
                         })
                     );
                 }
@@ -212,7 +229,6 @@ async function extract(data: Buffer, pluginsDir: string, plugin: PluginInfo): Pr
     });
 }
 
-
 async function moveFilesToRoot(srcDir: string, destDir: string) {
     const entries = await readdir(srcDir, { withFileTypes: true });
 
@@ -225,7 +241,6 @@ async function moveFilesToRoot(srcDir: string, destDir: string) {
             await rm(srcPath, { recursive: true });
         } else {
             await mkdir(dirname(destPath), { recursive: true });
-            // Convert the Buffer to Uint8Array
             const fileContent = await readFile(srcPath);
             await writeFile(destPath, new Uint8Array(fileContent));
             await unlink(srcPath);
@@ -239,22 +254,18 @@ async function uninstallPlugin(_, plugin: PluginInfo): Promise<void> {
             const parentDirs = new Set<string>();
 
             for (const originalFileName of plugin.downloadFiles) {
-                // Assuming files may be renamed to `plugin.filename` during installation if specified
                 const renamedFileName = plugin.filename || originalFileName;
                 const fullPath = join(pluginsDir, renamedFileName);
                 await rm(fullPath, { recursive: true, force: true });
-                // Collect parent directories to potentially remove later
                 parentDirs.add(dirname(fullPath));
             }
 
-            // Additional cleanup to remove any empty parent directories
             for (const dir of parentDirs) {
-                if ((await readdir(dir)).length === 0) { // Check if the directory is empty
+                if ((await readdir(dir)).length === 0) {
                     await rm(dir, { recursive: true, force: true });
                 }
             }
         } else if (plugin.filename) {
-            // If no specific files are listed, remove the entire plugin directory/file
             const fullPath = join(pluginsDir, plugin.filename);
             await rm(fullPath, { recursive: true, force: true });
         }
@@ -275,11 +286,9 @@ async function updatePluginRepo() {
         description: "Updates the Plugin Repo with the latest files.",
         tags: ["management"],
         dateAdded: new Date().toISOString(),
-        options: {},
     };
     const pluginDir = join(pluginsDir, pluginInfo.filename);
 
-    // Remove existing plugin directory if it exists
     if (await checkExists(pluginDir)) {
         await rm(pluginDir, { recursive: true });
         console.log("Existing Plugin Repo removed.");
@@ -289,15 +298,12 @@ async function updatePluginRepo() {
         const response = await fetch(pluginInfo.downloadUrl);
         if (!response.ok) throw new Error(`Failed to fetch ${pluginInfo.downloadUrl}: ${response.statusText}`);
 
-        // Get the data as Uint8Array
         const zipDataArray = new Uint8Array(await response.arrayBuffer());
         const zipFilePath = join(pluginsDir, pluginInfo.filename + ".zip");
 
-        // Write the file using Uint8Array
         await writeFile(zipFilePath, zipDataArray);
         console.log("Plugin zip file downloaded.");
 
-        // Convert to Buffer for the extract function
         const zipBuffer = Buffer.from(zipDataArray);
         await extract(zipBuffer, pluginsDir, pluginInfo);
         console.log("Plugin extracted successfully.");
@@ -314,9 +320,9 @@ async function updatePluginRepo() {
 async function checkExists(path: string): Promise<boolean> {
     try {
         await access(path, constants.F_OK);
-        return true; // The file or directory exists
+        return true;
     } catch {
-        return false; // The file or directory does not exist
+        return false;
     }
 }
 
